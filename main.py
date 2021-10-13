@@ -1,36 +1,46 @@
 import requests
 
+import re
+
 from bs4 import BeautifulSoup
 
 
-KEYWORDS = {'Дизайн', 'Фото', 'Web', 'Python'}
+KEYWORDS = {'дизайн', 'фото', 'web', 'python'}
 
-response = requests.get('https://habr.com/ru/all/')
 
-if not response.ok:
-    raise Exception('запрос неверный')
+def find_text(keywords):
+    response = requests.get('https://habr.com/ru/all/')
 
-text = response.text
+    if not response.ok:
+        raise Exception('запрос неверный')
 
-soup = BeautifulSoup(text, features="html.parser")
+    text = response.text
 
-texts = soup.find_all('article')
-for article in texts:
-    hubs = article.find_all('a', class_='tm-article-snippet__hubs-item-link')
-    hubs = {h.text.strip() for h in hubs}
-    # HUB = []
-    # words = []
-    # for h in hubs:
-    #     hb = h.text.strip()
-    #     HUB.append(hb)
-    # #     for w in HUB:
-    # #         words.append(w.split())
-    # #         for elements in
-    # # print(words)
-    # print(HUB)
-    if hubs & KEYWORDS:
-       data = article.find('time').attrs.get('title')
-       title = article.find('h2').find('a').find('span')
-       href = article.find('h2').find('a').attrs.get('href')
-       print(data, '-', title.text, '-', href)
+    soup = BeautifulSoup(text, features="html.parser")
 
+    text = soup.find_all('article')
+
+    for article in text:
+        hubs = article.find_all('a', class_='tm-article-snippet__hubs-item-link')
+        hubs = [h.text.strip() for h in hubs]
+        previews = article.find_all(class_="article-formatted-body article-formatted-body_version-2")
+        previews = [p.text.strip() for p in previews]
+        titles = article.find_all(class_='tm-article-snippet__title tm-article-snippet__title_h2')
+        titles = {t.text.strip() for t in titles}
+
+        for keys in keywords:
+            pattern = re.compile(f'{keys}[а-я]?', re.IGNORECASE)
+            for hu in previews:
+                resault = re.findall(pattern, hu)
+                for element in resault:
+                    new_list = []
+                    new_list.append(element)
+                    for e in new_list:
+                        e = article.find('time').attrs.get('title')
+                        title = article.find('h2').find('a').find('span')
+                        href = article.find('h2').find('a').attrs.get('href')
+                        print(e, '-', title.text, '-', href)
+
+
+
+print(find_text(KEYWORDS))
